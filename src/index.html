@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ヒアリングアプリ</title>
+    <?!=HtmlService.createHtmlOutputFromFile('style').getContent();?>
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+</head>
+
+<body>
+    <h2>ヒアリングアプリ　対象者一覧</h2>
+    <div id="loadingAnimation">
+      <i class="fas fa-spinner fa-3x fa-spin"></i>
+    </div>
+    <div id="filterField">
+        <form>
+            <b>検索条件</b><br>
+            <span>名前: <input type="text" id="name" name="name"></span><br>
+            <span>担当: <select id="manager" name="manager"></select></span><br>
+            <span>所属: <select id="company" name="company"></select></span><br>
+            <span>事業部: <select name="department" id="department"></select></span><br>
+            <span>所属課: <select name="division" id="division"></select></span><br>
+            <span>アラート: <select name="alert" id="alert"></select></span><br>
+            <span>期間: <select name="hearing" id="hearing"></select></span>
+            <p><input id="selectButton" type="button" onclick="init();" value="検索"></p>
+    </div>
+    <table id="dataField">
+        <thead>
+            <tr id="dataHeader">
+                <th>氏名</th>
+                <th>担当営業</th>
+                <th>最終ヒアリング⽇</th>
+                <th>事業部</th>
+                <th>役職</th>
+                <th>アラート</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script type="text/javascript">
+        const nameElement = document.getElementById("name");
+        const managerElement = document.getElementById("manager");
+        const companyElement = document.getElementById("company");
+        const departmentElement = document.getElementById("department");
+        const divisionElement = document.getElementById("division");
+        const alertElement = document.getElementById("alert");
+        const hearingElement = document.getElementById("hearing");
+
+        document.onkeypress = function(e) {
+            // エンターキーだったら無効にする
+            if (e.key === "Enter") {
+              return false;
+            }
+        }
+        window.onload = () => {
+            setCompanyData();
+            setDepartmentData();
+            setDivisionData();
+            setAlertData();
+            setHearingData();
+            setManagerData();
+        }
+
+        function setHearingData() {
+            const datas = ["すべて", "未ヒアリング", "3ヶ月以内に実施", "3ヶ月以上未実施"];
+            const group = document.createElement("optgroup");
+            datas.forEach(function (value) {
+                const option = document.createElement("option");
+                option.setAttribute("value", value);
+                option.innerHTML = value;
+                group.appendChild(option);
+            });
+            hearingElement.appendChild(group);
+        }
+
+        function setAlertData() {
+            const datas = ["すべて", "あり", "なし"];
+            const group = document.createElement("optgroup");
+            datas.forEach(function (value) {
+                const option = document.createElement("option");
+                option.setAttribute("value", value);
+                option.innerHTML = value;
+                group.appendChild(option);
+            });
+            alertElement.appendChild(group);
+        }
+
+        function setCompanyData() {
+            const datas = "<?=getCompany()?>"
+            const group = document.createElement("optgroup");
+            datas.split(",").forEach(function (value) {
+                const option = document.createElement("option");
+                option.setAttribute("value", value);
+                option.innerHTML = value;
+                group.appendChild(option);
+            });
+            companyElement.appendChild(group);
+        }
+
+        function setDepartmentData() {
+            const datas = "<?=getDepartment()?>"
+            const group = document.createElement("optgroup");
+            datas.split(",").forEach(function (value) {
+                const option = document.createElement("option");
+                option.setAttribute("value", value);
+                option.innerHTML = value;
+                group.appendChild(option);
+            });
+            departmentElement.appendChild(group);
+        }
+
+        function setDivisionData() {
+            const datas = "<?=getDivision()?>"
+            const group = document.createElement("optgroup");
+            datas.split(",").forEach(function (value) {
+                const option = document.createElement("option");
+                option.setAttribute("value", value);
+                option.innerHTML = value;
+                group.appendChild(option);
+            });
+            divisionElement.appendChild(group);
+        }
+
+        function setManagerData() {
+            const datas = "<?=getManager()?>"
+            const group = document.createElement("optgroup");
+            datas.split(",").forEach(function (value) {
+                const option = document.createElement("option");
+                option.setAttribute("value", value);
+                option.innerHTML = value;
+                group.appendChild(option);
+            });
+            managerElement.appendChild(group);
+        }
+
+        function init() {
+            google.script.run.withSuccessHandler(setData).getMember([nameElement.value, managerElement.value, companyElement.value, departmentElement.value, divisionElement.value], alertElement.value, hearingElement.value);
+            
+            let loadingAnimation = document.getElementById("loadingAnimation");
+            loadingAnimation.style.visibility = "visible";
+        }
+
+        function setData(userData) {
+            let loadingAnimation = document.getElementById("loadingAnimation");
+            let dataField = document.getElementById("dataField");
+            loadingAnimation.style.visibility = "hidden";
+            dataField.style.visibility = "visible";
+            
+            nameElement.value = nameElement.value;
+            managerElement.value = managerElement.value;
+            companyElement.value = companyElement.value;
+            departmentElement.value = departmentElement.value;
+            divisionElement.value = divisionElement.value;
+            alertElement.value = alertElement.value;
+            hearingElement.value = hearingElement.value;
+
+            let url = "<?=getAppUrl()?>";
+            //#dataFieldの初期化
+            $("#dataField tbody").empty();
+            //#dataFieldに出力
+            for (var n = 0, len = userData.length; n < len; n++) {
+                //タグ作成
+                const name = userData[n]["user"]["name"]
+                const innerName = userData[n]["user"]["url"] != "" ? '<a target=\"_blank" href=\"' + userData[n]["user"]["url"] + '\">' + name + "</a>" : name;
+                const lastHearing = userData[n]["lastHearing"];
+                const isInterval = lastHearing != null ? lastHearing["isInterval"] : false;
+                const isAlert = userData[n]["alert"];
+                const innerLastHearing = lastHearing != null ? '<a target=\"_blank" href=\"' + lastHearing["url"] + '\">' + lastHearing["date"] + "</a>" : "未ヒアリング";
+                const tr = isInterval ? (isAlert ? "<tr class=\"alert\">" : "<tr class=\"last\">") : (isAlert ? "<tr class=\"alert\">" : "<tr>");
+                const alert = isAlert ? "あり" : "なし";
+                const newDoc = '<a target=\"_blank" href=\"' + url + "?page=memo&name=" + name + '\">新規作成</a>'
+                $("#dataField tbody").append(
+                    $(tr).append(
+                        $("<td>").html(innerName)
+                    ).append(
+                        $("<td>").html(userData[n]["businessManager"])
+                    ).append(
+                        $("<td>").html(innerLastHearing)
+                    ).append(
+                        $("<td>").html(userData[n]["department"])
+                    ).append(
+                        $("<td>").html(userData[n]["post"])
+                    ).append(
+                        $("<td>").html(alert)
+                    ).append(
+                        $("<td>").html(newDoc)
+                    )
+                );
+            }
+
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+</body>
+
+</html>
