@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ヒアリングメモ</title>
+    <?!=HtmlService.createHtmlOutputFromFile('style').getContent();?>
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+</head>
+
+<body>
+    <div>
+        <button onclick="window.top.close()">ウィンドウを閉じる</button>
+        <h2>ヒアリングメモを作成する</h2>
+    </div>
+    <div id="loadingAnimation">
+      <i class="fas fa-spinner fa-3x fa-spin"></i>
+    </div>
+    <div id="inputField">
+        <form action="<?=getAppUrl()?>" method="post">
+            <input hidden name="page" value="memo">
+            <input hidden name="name" id="name" value="<?=name?>">
+            <input type="text" name="name" value="<?=name?>" disabled>
+            <p>ヒアリング実施日：<br>
+                <input type="date" name="date" id="today">&emsp;
+                <a href="<?=getLastDocumentMemo(name)?>" name="url" target="_blank">前回のヒアリングメモはこちら</a><br>
+            </p>
+            <p>
+                <input name="alert" value="<?=getAlert(name)?>" id="alert" type='checkbox' <?=checkedState(name)?>/>
+                <label for="coding">アラート通知させる</label>
+            </p>
+            <p>ヒアリング内容：<br>
+                <textarea name="comment" id="comment" cols="80" rows="30">担当：
+実施者：
+【業務内容】
+≪PJ概要≫
+商流
+エンド：
+元請け：
+1次請：
+2次請：
+3次請：
+現場：
+場所：
+定時：
+■作業内容
+■技術環境
+OS：
+MW：
+DB：
+NW：
+その他：
+【方向性・目標】
+方向性：
+目標：
+【学習内容】
+学習内容：
+完了予定：
+進捗状況：
+【給与】
+成果給
+ 現在：
+ 1年後：
+ 3年後：
+ 5年後：
+【誘い】
+・ハードル越えへの誘い
+・事業部活動への誘い
+・リーダーとかは？
+・現場開拓への誘い
+【広報・その他】
+会社状況：
+イベント：
+有給：
+＜営業要件＞</textarea>
+            </p>
+            <p>非公開にしたい内容：<br>
+                <textarea name="privateComment" id="privateComment" cols="80" rows="30"></textarea>
+            </p>
+            <p><input type="button" onclick="save();" value="登録する"></p>
+    </div>
+    <script type="text/javascript">
+
+        const name = document.getElementById("name");
+        const today = document.getElementById("today");
+        const alert = document.getElementById("alert");
+        const comment = document.getElementById("comment");
+        const privateComment = document.getElementById("privateComment");
+
+        window.onload = () => {
+            let today = new Date();
+            today.setDate(today.getDate());
+            const yyyy = today.getFullYear();
+            const mm = ("0" + (today.getMonth() + 1)).slice(-2);
+            const dd = ("0" + today.getDate()).slice(-2);
+            document.getElementById("today").value = yyyy + '-' + mm + '-' + dd;
+        }
+
+        function save() {
+            var result = confirm(name.value + 'さんのヒアリングを保存しますか。');
+            if (result) {
+                let loadingAnimation = document.getElementById("loadingAnimation");
+                loadingAnimation.style.visibility = "visible";
+                google.script.run.withSuccessHandler(close).save(name.value, today.value, alert.checked, comment.value,privateComment.value);
+            }
+        }
+
+        function close() {
+            let loadingAnimation = document.getElementById("loadingAnimation");
+            loadingAnimation.style.visibility = "hidden";
+        }
+    </script>
+</body>
+
+</html>
